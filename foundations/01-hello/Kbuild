@@ -1,3 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0
+#
+# Kbuild is the kernel's own build-description language. The kernel build system reads this
+# file to learn what to build. You do not call a compiler yourself.
+#
+# `obj-m` = "objects built as Modules" (`-m`), as opposed to `obj-y`, which would link the code
+# permanently into the kernel image. `hello.o` means "compile `hello.rs` (or `hello.c`) and
+# produce the module `hello.ko`".
 
 obj-m := hello.o
