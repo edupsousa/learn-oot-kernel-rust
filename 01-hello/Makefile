@@ -10,4 +10,4 @@
 # `kmake` (a wrapper around `make LLVM=1`) is the command you type: `kmake` builds, and
 # `kmake clean` removes the build output.
 
-include $(dir $(lastword $(MAKEFILE_LIST)))../../common.mk
+include $(dir $(lastword $(MAKEFILE_LIST)))../common.mk

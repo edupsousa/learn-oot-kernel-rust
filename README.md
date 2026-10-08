@@ -2,7 +2,7 @@
 # Learning Rust Linux Kernel Modules
 
 Small hands-on lessons on out-of-tree Linux kernel module development in Rust. Each lesson is a
-self-contained module in `foundations/`, built against a kernel checkout and tested in a QEMU/KVM VM.
+self-contained module in its own numbered folder (`01-hello`, `02-counter`, ...), built against a kernel checkout and tested in a QEMU/KVM VM.
 Reference code: `$KDIR/samples/rust/` in the kernel tree.
 
 Tested with: Linux **v6.18**, rustc **1.91.0**, bindgen **0.72.1**, clang/LLVM 21.
@@ -11,12 +11,12 @@ Tested with: Linux **v6.18**, rustc **1.91.0**, bindgen **0.72.1**, clang/LLVM 2
 
 | # | Folder | What it covers |
 |---|--------|----------------|
-| 1 | `foundations/01-hello` | Build/load cycle: `module!`, `kernel::Module`, `Drop`, `pr_info!`, `insmod`/`rmmod`, `dmesg`, Kbuild files. |
-| 2 | `foundations/02-counter` | Module state: kernel `Mutex<T>`, pin-init (`#[pin_data]`, `try_pin_init!`), `InPlaceModule`, `PinnedDrop`, fallible allocation (`KVec`), failing `init`. Module parameters are not available in Rust on v6.18. |
-| 3 | `foundations/03-hello_dev` | `/dev/hello` misc character device: `MiscDevice` + `#[vtable]`, per-open state, `read`/`write`, `ioctl`, safe user memory access, locking. Includes a userspace test, `ioctl_test.c`. |
-| 4 | `foundations/04-broken` | Break it on purpose: lockdep (ABBA deadlock), sleeping in atomic context, and KASAN out-of-bounds / use-after-free from `unsafe` code. Needs a debug kernel config. |
-| 5 | `foundations/05-gdb` | Debug with GDB: `vm-debug`, `lx-symbols`, breakpoints (plain and conditional), watchpoints, `finish`/`bt`, `lx-dmesg` / `lx-ps` / `lx-lsmod`. Uses `/dev/gdbtarget`, a Collatz module written to be debugged. |
-| 6 | `foundations/06-edu_drv` | PCI driver for QEMU's emulated `edu` card: ID table, `probe`/`unbind`, BAR mapping with `Devres`, MMIO, shared interrupt handler. |
+| 1 | `01-hello` | Build/load cycle: `module!`, `kernel::Module`, `Drop`, `pr_info!`, `insmod`/`rmmod`, `dmesg`, Kbuild files. |
+| 2 | `02-counter` | Module state: kernel `Mutex<T>`, pin-init (`#[pin_data]`, `try_pin_init!`), `InPlaceModule`, `PinnedDrop`, fallible allocation (`KVec`), failing `init`. Module parameters are not available in Rust on v6.18. |
+| 3 | `03-hello_dev` | `/dev/hello` misc character device: `MiscDevice` + `#[vtable]`, per-open state, `read`/`write`, `ioctl`, safe user memory access, locking. Includes a userspace test, `ioctl_test.c`. |
+| 4 | `04-broken` | Break it on purpose: lockdep (ABBA deadlock), sleeping in atomic context, and KASAN out-of-bounds / use-after-free from `unsafe` code. Needs a debug kernel config. |
+| 5 | `05-gdb` | Debug with GDB: `vm-debug`, `lx-symbols`, breakpoints (plain and conditional), watchpoints, `finish`/`bt`, `lx-dmesg` / `lx-ps` / `lx-lsmod`. Uses `/dev/gdbtarget`, a Collatz module written to be debugged. |
+| 6 | `06-edu_drv` | PCI driver for QEMU's emulated `edu` card: ID table, `probe`/`unbind`, BAR mapping with `Devres`, MMIO, shared interrupt handler. |
 
 ## Dependencies
 
@@ -64,7 +64,7 @@ The lessons assume these commands exist (defined in the workspace `flake.nix`):
 All lessons follow the same cycle: build, boot the VM with the module, inspect `dmesg`.
 
 ```
-cd foundations/01-hello && kmake && vm-run hello.ko
+cd 01-hello && kmake && vm-run hello.ko
 # in the VM:
 dmesg | tail
 rmmod hello; dmesg | tail
@@ -111,9 +111,9 @@ Three `#[no_mangle]` + `#[inline(never)]` helpers (`gdbt_parse`, `gdbt_run_colla
 readable symbols to break on. Needs `DEBUG_INFO_DWARF5` and `GDB_SCRIPTS`.
 ```
 # terminal 1
-cd foundations/05-gdb && kmake && vm-debug gdb_target.ko
+cd 05-gdb && kmake && vm-debug gdb_target.ko
 # terminal 2
-cd foundations/05-gdb && gdb -x debug.gdb     # loads vmlinux + vmlinux-gdb.py, connects to :1234
+cd 05-gdb && gdb -x debug.gdb     # loads vmlinux + vmlinux-gdb.py, connects to :1234
 (gdb) continue                  # boot; when the VM shell appears, press Ctrl-C in GDB
 (gdb) lx-symbols .              # load gdb_target's symbols (directory containing the .ko)
 (gdb) break gdbt_run_collatz

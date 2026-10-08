@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 #
 # Shared build rules for the out-of-tree modules. Each module Makefile just does:
-#   include $(dir $(lastword $(MAKEFILE_LIST)))../../common.mk
+#   include $(dir $(lastword $(MAKEFILE_LIST)))../common.mk
 #
 # KDIR must point to the configured and built kernel checkout. Set it in the
 # environment (the Nix devShell does) or on the command line: kmake KDIR=...
