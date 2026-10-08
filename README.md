@@ -146,3 +146,9 @@ rust-analyzer reads (point `rust-analyzer.linkedProjects` at it; disable `checkO
 - **Pin**: a promise that a value will not move in memory.
 - **GFP flags**: tell the allocator how it may behave (`GFP_KERNEL` may sleep).
 - **Guard**: value returned by `lock()`; holding it means holding the lock.
+
+## License
+
+The repository is under the [MIT License](LICENSE). The exception is any file that carries its own
+`SPDX-License-Identifier` header: the lesson sources are `GPL-2.0`, as Linux kernel modules must be
+GPL-compatible, and lessons 3, 4 and 6 build on GPL-licensed kernel samples (`samples/rust/`).
