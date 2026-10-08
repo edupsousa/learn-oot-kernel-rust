@@ -16,3 +16,4 @@ rust-project.json
 
 # Userspace test binaries
 ioctl_test
+edu_test
