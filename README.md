@@ -15,7 +15,7 @@ Tested with: Linux **v6.18**, rustc **1.91.0**, bindgen **0.72.1**, clang/LLVM 2
 | 2 | `foundations/02-counter` | Module state: kernel `Mutex<T>`, pin-init (`#[pin_data]`, `try_pin_init!`), `InPlaceModule`, `PinnedDrop`, fallible allocation (`KVec`), failing `init`. Module parameters are not available in Rust on v6.18. |
 | 3 | `foundations/03-hello_dev` | `/dev/hello` misc character device: `MiscDevice` + `#[vtable]`, per-open state, `read`/`write`, `ioctl`, safe user memory access, locking. Includes a userspace test, `ioctl_test.c`. |
 | 4 | `foundations/04-broken` | Break it on purpose: lockdep (ABBA deadlock), sleeping in atomic context, and KASAN out-of-bounds / use-after-free from `unsafe` code. Needs a debug kernel config. |
-| 5 | uses `foundations/03-hello_dev` | Debug with GDB: `vm-debug`, `lx-symbols`, breakpoints in module code, `lx-dmesg` / `lx-ps` / `lx-lsmod`. No separate folder. |
+| 5 | `foundations/05-gdb` | Debug with GDB: `vm-debug`, `lx-symbols`, breakpoints (plain and conditional), watchpoints, `finish`/`bt`, `lx-dmesg` / `lx-ps` / `lx-lsmod`. Uses `/dev/gdbtarget`, a Collatz module written to be debugged. |
 | 6 | `foundations/06-edu_drv` | PCI driver for QEMU's emulated `edu` card: ID table, `probe`/`unbind`, BAR mapping with `Devres`, MMIO, shared interrupt handler. |
 
 ## Dependencies
@@ -105,22 +105,36 @@ echo uaf   > /dev/broken   # KASAN: use-after-free
 ```
 KASAN reports only the first error per boot, so reboot between `oob` and `uaf` (or add `kasan_multi_shot` to the kernel command line).
 
-### Lesson 5: GDB (uses `03-hello_dev`)
+### Lesson 5: `05-gdb`
+`gdb_target` creates `/dev/gdbtarget`: write a number and it runs the Collatz sequence, remembering the steps and peak.
+Three `#[no_mangle]` + `#[inline(never)]` helpers (`gdbt_parse`, `gdbt_run_collatz`, `gdbt_collatz_step`) give GDB
+readable symbols to break on. Needs `DEBUG_INFO_DWARF5` and `GDB_SCRIPTS`.
 ```
-# terminal 1 (in 03-hello_dev, after building)
-vm-debug hello_dev.ko ioctl_test
+# terminal 1
+cd foundations/05-gdb && kmake && vm-debug gdb_target.ko
 # terminal 2
-gdb $KDIR/vmlinux -ex 'target remote :1234'
-(gdb) continue                       # boot; when the shell appears, press Ctrl-C in GDB
-(gdb) source $KDIR/vmlinux-gdb.py    # the symlink at the kernel root, not scripts/gdb/
-(gdb) lx-symbols /path/to/learn/foundations/03-hello_dev
-(gdb) info functions write_iter      # Rust symbols are mangled; find ours, then `break` on it
+cd foundations/05-gdb && gdb -x debug.gdb     # loads vmlinux + vmlinux-gdb.py, connects to :1234
+(gdb) continue                  # boot; when the VM shell appears, press Ctrl-C in GDB
+(gdb) lx-symbols .              # load gdb_target's symbols (directory containing the .ko)
+(gdb) break gdbt_run_collatz
 (gdb) continue
-# terminal 1: echo hi > /dev/hello   -> GDB stops in our code
-(gdb) bt
-(gdb) lx-dmesg
+# terminal 1: exec 3<>/dev/gdbtarget; echo 27 >&3; cat <&3     -> GDB stops
 ```
-Troubleshooting: `No symbol 'init_task'` means GDB started without `vmlinux` (run `file $KDIR/vmlinux`, then `lx-symbols` again).
+Exercises:
+1. `bt`, `info args`, `print *state`, `finish` (returns the step count).
+2. Conditional breakpoint: `break gdbt_collatz_step if n == 9232` (27's sequence peaks at 9232), then `continue`.
+3. Watchpoint: at `gdbt_run_collatz`, `watch -l state.last_steps` and `continue`; GDB stops on each update. Use `.`, not `->`: in Rust `state` is a reference, and `->` is a syntax error.
+4. Error path: `break gdbt_parse`, then `echo abc > /dev/gdbtarget` and `step` to the `EINVAL` return.
+5. Kernel helpers: `lx-dmesg`, `lx-ps` (find the shell running your write), `lx-lsmod`. Run these from a *C* frame: stopped inside module code they fail with `No symbol 'init_task'` (or `'void'`), because symbol lookup is scoped to the Rust frame. Use `bt`, then `frame N` on a kernel frame such as `vfs_write`, run the command, and `frame 0` to go back.
+6. Stretch: reproduce a lesson 4 bug (`echo uaf > /dev/broken`) and catch it with `break kasan_report`.
+
+Troubleshooting (all of these were hit while verifying the lesson):
+- Run `gdb -x debug.gdb` from the module directory (`05-gdb`). `lx-symbols` scans the current directory as well as its arguments, so starting GDB from `/` or `$HOME` makes it crawl the filesystem and fail. `lx-symbols .` or an absolute path to `05-gdb` both work; module symbols are matched by `.ko` file name.
+- `No symbol 'init_task'` right after starting means GDB has no `vmlinux` (`file $KDIR/vmlinux`), or you are stopped inside module code (see exercise 5).
+- The "auto-loading has been declined by your auto-load safe-path" warning is harmless: `debug.gdb` sources `vmlinux-gdb.py` explicitly. Pass `-iex 'add-auto-load-safe-path $KDIR'` to silence it.
+- `warning: (Internal error: pc ... in read in CU, but not in symtab.)` printed by `lx-ps` / `lx-dmesg` is harmless.
+- Arguments shown as `<optimized out>` are normal at `-O2`; `finish`, `up` and `info args` one frame earlier still work.
+- The module must be the one the kernel loaded: rebuild and reboot after every change, or breakpoints land at the wrong addresses.
 
 ### Lesson 6: `06-edu_drv`
 ```
