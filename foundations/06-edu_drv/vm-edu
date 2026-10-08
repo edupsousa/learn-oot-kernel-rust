@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Like `vm-run`, but QEMU also gets `-device edu` (the emulated PCI card, not our edu_drv module). Extra QEMU args: QEMU_EXTRA="..." vm-edu mod.ko
+# (vm-run has no hook for extra QEMU arguments, so we patch a copy of it on the fly.)
+set -euo pipefail
+script="$(sed 's|-no-reboot "\${extra\[@\]}"|-no-reboot -device edu ${QEMU_EXTRA:-} "${extra[@]}"|' "$(command -v vm-run)")"
+grep -q -- '-device edu' <<<"$script" || { echo "vm-edu: could not patch vm-run" >&2; exit 1; }
+exec bash -c "$script" vm-edu "$@"
