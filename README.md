@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: GPL-2.0 -->
 # Learning Rust Linux Kernel Modules
 
 Small hands-on lessons on out-of-tree Linux kernel module development in Rust. Each lesson is a
@@ -149,6 +150,5 @@ rust-analyzer reads (point `rust-analyzer.linkedProjects` at it; disable `checkO
 
 ## License
 
-The repository is under the [MIT License](LICENSE). The exception is any file that carries its own
-`SPDX-License-Identifier` header: the lesson sources are `GPL-2.0`, as Linux kernel modules must be
-GPL-compatible, and lessons 3, 4 and 6 build on GPL-licensed kernel samples (`samples/rust/`).
+GPL-2.0-only, see [LICENSE](LICENSE). Linux kernel modules must be GPL-compatible, and lessons 3, 4 and 6
+build on GPL-licensed kernel samples (`samples/rust/`).

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0
 # Like `vm-run`, but QEMU also gets `-device edu` (the emulated PCI card, not our edu_drv module). Extra QEMU args: QEMU_EXTRA="..." vm-edu mod.ko
 # (vm-run has no hook for extra QEMU arguments, so we patch a copy of it on the fly.)
 set -euo pipefail
