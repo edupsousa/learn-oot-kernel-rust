@@ -18,6 +18,7 @@ Tested with: Linux **v6.18**, rustc **1.91.0**, bindgen **0.72.1**, clang/LLVM 2
 | 5 | [`05-gdb`](05-gdb/README.md) | Debug with GDB: `vm-debug`, `lx-symbols`, breakpoints (plain and conditional), watchpoints, `finish`/`bt`, `lx-dmesg` / `lx-ps` / `lx-lsmod`. Uses `/dev/gdbtarget`, a Collatz module written to be debugged. |
 | 6 | [`06-edu_drv`](06-edu_drv/README.md) | PCI driver for QEMU's emulated `edu` card: ID table, `probe`/`unbind`, BAR mapping with `Devres`, MMIO, shared interrupt handler. |
 | 7 | [`07-edu_misc`](07-edu_misc/README.md) | `/dev/edu` on top of the edu driver: an ioctl starts a factorial on the card and the caller sleeps on a `CondVar` until the interrupt wakes it. Process vs interrupt context, `Atomic`, global lock. Includes a userspace test, `edu_test.c`. |
+| 8 | [`08-edu_dma`](08-edu_dma/README.md) | DMA with the `edu` card: coherent buffer (`CoherentAllocation`), `DmaMask`, bus addresses, RAM to card and back, completion interrupt. Who owns a buffer shared with hardware. |
 
 ## Dependencies
 
@@ -38,7 +39,7 @@ The lessons assume these commands exist (defined in the workspace `flake.nix`):
 - `kmake`: `make LLVM=1` with workarounds for nixpkgs' clang wrapper and an lld/objtool crash. Plain `make LLVM=1` may work on other setups.
 - `vm-run [file ...]`: boots `$KDIR/arch/x86/boot/bzImage` with a busybox initramfs. Any `.ko` passed is `insmod`ed at boot and every file is copied to `/mods/`; you get a shell (Ctrl-A X quits).
 - `vm-debug`: same, paused with a GDB stub on `:1234`.
-- `06-edu_drv/vm-edu`: wrapper that runs `vm-run` with QEMU's `-device edu` added.
+- `vm-edu` (in `06-edu_drv`, `07-edu_misc` and `08-edu_dma`): wrapper that runs `vm-run` with QEMU's `-device edu` added.
 
 ## Setup
 
@@ -93,5 +94,5 @@ rust-analyzer reads (point `rust-analyzer.linkedProjects` at it; disable `checkO
 
 ## License
 
-GPL-2.0-only, see [LICENSE](LICENSE). Linux kernel modules must be GPL-compatible, and lessons 3, 4 and 6
+GPL-2.0-only, see [LICENSE](LICENSE). Linux kernel modules must be GPL-compatible, and lessons 3, 4, 6 and 8
 build on GPL-licensed kernel samples (`samples/rust/`).
