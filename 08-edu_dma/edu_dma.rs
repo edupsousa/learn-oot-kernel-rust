@@ -152,6 +152,11 @@ impl Shared {
         let mut guard = self.request.lock();
         self.finished.store(0, Relaxed);
 
+        // This block ends before we sleep. Not required here: `access(dev)` with a `Bound`
+        // device returns a plain `&Bar0`, safe to hold across a sleep. Lesson 7 had no `Bound`
+        // device and used `try_access()`, whose guard is an RCU read-side section that must not
+        // be held while sleeping. Keeping the habit means the code stays correct if this is
+        // ever switched to `try_access()`.
         {
             let bar = self.bar.access(dev)?;
             bar.write64(src, Regs::DMA_SRC);
